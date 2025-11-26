@@ -37,7 +37,7 @@ const AdminWithdrawals: React.FC = () => {
 
     const handleApprove = async (id: string) => {
         try {
-            await api.put(`/admin/withdrawals/${id}`, { approved: true });
+            await api.patch(`/admin/withdrawals/${id}`, { status: 'APPROVED' });
             toast.success('Saque aprovado!');
             fetchWithdrawals();
         } catch (error) {
@@ -47,7 +47,7 @@ const AdminWithdrawals: React.FC = () => {
 
     const handleReject = async (id: string) => {
         try {
-            await api.put(`/admin/withdrawals/${id}`, { approved: false });
+            await api.patch(`/admin/withdrawals/${id}`, { status: 'REJECTED' });
             toast.success('Saque recusado!');
             fetchWithdrawals();
         } catch (error) {

@@ -25,7 +25,7 @@ const AdminDashboard: React.FC = () => {
 
     const handleProcessWithdrawal = async (id: string, approved: boolean) => {
         try {
-            await api.put(`/admin/withdrawals/${id}`, { approved });
+            await api.patch(`/admin/withdrawals/${id}`, { status: approved ? 'APPROVED' : 'REJECTED' });
             toast.success(`Saque ${approved ? 'aprovado' : 'rejeitado'}`);
             fetchData();
         } catch (error) {

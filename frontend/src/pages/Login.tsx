@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
 import { Link } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { Bot } from 'lucide-react';
 
 const Login: React.FC = () => {

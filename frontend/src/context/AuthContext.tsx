@@ -22,6 +22,7 @@ interface AuthContextData {
     loading: boolean;
     login: (data: LoginData) => Promise<void>;
     logout: () => void;
+    signOut: () => void;
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
@@ -78,8 +79,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         navigate('/login');
     };
 
+    const signOut = () => {
+        localStorage.removeItem('@StratonBot:token');
+        localStorage.removeItem('@StratonBot:user');
+        window.location.href = '/login';
+    };
+
     return (
-        <AuthContext.Provider value={{ signed, user, loading, login, logout }}>
+        <AuthContext.Provider value={{ signed, user, loading, login, logout, signOut }}>
             {children}
         </AuthContext.Provider>
     );

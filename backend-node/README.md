@@ -1,101 +1,255 @@
-# StratonBot Backend - Node.js
+# StratonBot Backend API
 
-Backend da StratonBot desenvolvido em Node.js com Express e Supabase.
+API backend do StratonBot construída com Node.js, Express e Supabase.
 
-## 🚀 Tecnologias
+## 🚀 Stack Tecnológica
 
-- **Node.js** - Runtime JavaScript
-- **Express** - Framework web
-- **Supabase** - Backend as a Service (PostgreSQL)
-- **dotenv** - Gerenciamento de variáveis de ambiente
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Banco de Dados**: Supabase (PostgreSQL)
+- **Autenticação**: JWT (JSON Web Tokens)
+- **Criptografia**: bcryptjs
 
-## 📁 Estrutura de Pastas
+## 📋 Pré-requisitos
 
-```
-backend-node/
-├── index.js              # Arquivo principal do servidor
-├── package.json          # Dependências e scripts
-├── .env.example          # Exemplo de variáveis de ambiente
-├── .gitignore           # Arquivos ignorados pelo Git
-├── routes/              # Rotas da API
-│   └── index.js
-├── controllers/         # Lógica de negócio
-│   └── README.md
-└── models/              # Modelos de dados
-    └── README.md
-```
+- Node.js 16+ instalado
+- Conta no Supabase
+- Variáveis de ambiente configuradas
 
 ## ⚙️ Configuração
 
-### 1. Instalar dependências
+### 1. Instalar Dependências
 
 ```bash
 npm install
 ```
 
-### 2. Configurar variáveis de ambiente
+### 2. Configurar Variáveis de Ambiente
 
-Copie o arquivo `.env.example` para `.env`:
-
-```bash
-cp .env.example .env
-```
-
-Edite o arquivo `.env` com suas credenciais:
+Crie um arquivo `.env` na raiz do projeto:
 
 ```env
+# Supabase
+SUPABASE_URL=sua_url_do_supabase
+SUPABASE_KEY=sua_chave_do_supabase
+
+# JWT
+JWT_SECRET=sua_chave_secreta_jwt
+
+# Servidor
 PORT=3000
-SUPABASE_URL=https://seu-projeto.supabase.co
-SUPABASE_KEY=sua-chave-anon-aqui
 ```
 
-### 3. Executar localmente
+### 3. Iniciar Servidor
 
 ```bash
-npm start
+node index.js
 ```
 
-Para desenvolvimento com auto-reload:
+O servidor estará rodando em `http://localhost:3000`
+
+## 🔐 Autenticação
+
+Todas as rotas protegidas requerem um token JWT no header:
+
+```
+Authorization: Bearer SEU_TOKEN_JWT
+```
+
+### Obter Token
+
+Faça login ou registre-se para receber um token:
 
 ```bash
-npm run dev
+POST /auth/login
+POST /auth/register
 ```
 
-## 🌐 Endpoints Disponíveis
+## 📡 Endpoints da API
 
-### Health Check
+### 🔓 Autenticação (Públicas)
 
-#### `GET /`
-Health check básico da API.
+#### POST /auth/register
+Registrar novo usuário
 
-**Resposta:**
+**Body:**
 ```json
 {
-  "mensagem": "StratonBot API funcionando!",
-  "status": "online",
-  "timestamp": "2025-11-25T23:33:14.000Z"
+  "nome": "João Silva",  // ou "name"
+  "email": "joao@example.com",
+  "password": "senha123",
+  "cpf": "12345678900"  // opcional
 }
 ```
 
-#### `GET /health/supabase`
-Verifica a conexão com o Supabase.
-
-**Resposta de sucesso:**
+**Response:**
 ```json
 {
-  "mensagem": "Conexão com Supabase estabelecida com sucesso!",
-  "status": "conectado"
+  "mensagem": "Usuário cadastrado com sucesso",
+  "dados": {
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "user": {
+      "id": "uuid",
+      "name": "João Silva",
+      "email": "joao@example.com",
+      "role": "USUARIO",
+      "balance": 0
+    }
+  }
+}
+```
+
+#### POST /auth/login
+Fazer login
+
+**Body:**
+```json
+{
+  "email": "joao@example.com",
+  "password": "senha123"
 }
 ```
 
 ---
 
-### Usuários (`/usuarios`)
+### 💰 Financeiro (Autenticadas 🔒)
 
-#### `GET /usuarios`
-Lista todos os usuários cadastrados.
+#### GET /finance/balance
+Consultar saldo do usuário autenticado
 
-**Resposta:**
+**Response:**
+```json
+{
+  "mensagem": "Saldo consultado com sucesso",
+  "dados": {
+    "balance": 150.50
+  }
+}
+```
+
+#### GET /finance/pix-keys
+Listar chaves PIX do usuário
+
+**Response:**
+```json
+{
+  "mensagem": "Chaves PIX recuperadas com sucesso",
+  "dados": [
+    {
+      "id": "uuid",
+      "keyType": "CPF",
+      "keyValue": "12345678900",
+      "status": "aprovada"
+    }
+  ]
+}
+```
+
+#### POST /finance/pix-keys
+Cadastrar nova chave PIX
+
+**Body:**
+```json
+{
+  "keyType": "CPF",  // ou "tipo_chave"
+  "keyValue": "12345678900"  // ou "chave_pix"
+}
+```
+
+#### GET /finance/withdrawals
+Listar saques do usuário
+
+**Response:**
+```json
+{
+  "mensagem": "Saques recuperados com sucesso",
+  "dados": [
+    {
+      "id": "uuid",
+      "amount": 100.00,
+      "status": "PENDING",
+      "createdAt": "2025-01-26T00:00:00Z"
+    }
+  ]
+}
+```
+
+#### POST /finance/withdrawals
+Solicitar saque
+
+**Body:**
+```json
+{
+  "amount": 100.00  // ou "valor"
+}
+```
+
+#### GET /finance/transactions
+Listar transações do usuário
+
+---
+
+### 🤖 Bots (Autenticadas 🔒)
+
+#### GET /bots
+Listar bots do usuário autenticado
+
+**Response:**
+```json
+{
+  "mensagem": "Bots recuperados com sucesso",
+  "dados": [
+    {
+      "id": "uuid",
+      "nome": "Meu Bot",
+      "token": "123456:ABC...",
+      "descricao": "Bot de vendas",
+      "ativo": true,
+      "created_at": "2025-01-26T00:00:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+#### POST /bots
+Criar novo bot
+
+**Body:**
+```json
+{
+  "nome": "Meu Bot",  // ou "name"
+  "token": "123456:ABC...",
+  "descricao": "Bot de vendas"  // ou "description", opcional
+}
+```
+
+#### GET /bots/:id
+Consultar bot por ID
+
+#### PUT /bots/:id
+Atualizar bot
+
+**Body:**
+```json
+{
+  "nome": "Novo Nome",
+  "descricao": "Nova descrição",
+  "ativo": false
+}
+```
+
+#### DELETE /bots/:id
+Remover bot
+
+---
+
+### 👑 Admin (Autenticadas 🔒 + Admin)
+
+#### GET /admin/users
+Listar todos os usuários
+
+**Response:**
 ```json
 {
   "mensagem": "Usuários recuperados com sucesso",
@@ -104,221 +258,203 @@ Lista todos os usuários cadastrados.
 }
 ```
 
-#### `POST /usuarios`
-Cadastra um novo usuário.
+#### GET /admin/withdrawals
+Listar todos os saques
 
-**Body:**
+**Response:**
 ```json
 {
-  "nome": "João Silva",
-  "email": "joao@example.com",
-  "telegram_id": "123456789",
-  "username": "joaosilva"
-}
-```
-
-**Resposta:**
-```json
-{
-  "mensagem": "Usuário cadastrado com sucesso",
-  "dados": { "id": 1, "nome": "João Silva", ... }
-}
-```
-
-#### `GET /usuarios/:id`
-Consulta um usuário específico por ID.
-
-**Resposta:**
-```json
-{
-  "mensagem": "Usuário encontrado",
-  "dados": { "id": 1, "nome": "João Silva", ... }
-}
-```
-
----
-
-### Financeiro (`/financeiro`)
-
-#### `POST /financeiro/pix`
-Cadastra uma chave PIX para um usuário.
-
-**Body:**
-```json
-{
-  "usuario_id": 1,
-  "chave_pix": "joao@example.com",
-  "tipo_chave": "email"
-}
-```
-
-**Resposta:**
-```json
-{
-  "mensagem": "Chave PIX cadastrada com sucesso",
-  "dados": { "id": 1, "chave_pix": "joao@example.com", "status": "pendente" }
-}
-```
-
-#### `GET /financeiro/saldo/:usuarioId`
-Consulta o saldo de um usuário.
-
-**Resposta:**
-```json
-{
-  "mensagem": "Saldo consultado com sucesso",
-  "dados": {
-    "usuario_id": 1,
-    "nome": "João Silva",
-    "email": "joao@example.com",
-    "saldo": 150.50
-  }
-}
-```
-
-#### `POST /financeiro/saque`
-Solicita um saque.
-
-**Body:**
-```json
-{
-  "usuario_id": 1,
-  "valor": 50.00
-}
-```
-
-**Resposta:**
-```json
-{
-  "mensagem": "Solicitação de saque criada com sucesso",
-  "dados": { "id": 1, "valor": 50.00, "status": "pendente" }
-}
-```
-
----
-
-### Bots (`/bots`)
-
-#### `GET /bots`
-Lista todos os bots. Aceita query parameter `usuario_id` para filtrar.
-
-**Query Parameters:**
-- `usuario_id` (opcional): Filtra bots por usuário
-
-**Resposta:**
-```json
-{
-  "mensagem": "Bots recuperados com sucesso",
-  "dados": [...],
+  "mensagem": "Saques recuperados com sucesso",
+  "dados": [
+    {
+      "id": "uuid",
+      "usuario_id": "uuid",
+      "valor": 100.00,
+      "status": "pendente",
+      "created_at": "2025-01-26T00:00:00Z"
+    }
+  ],
   "total": 5
 }
 ```
 
-#### `POST /bots`
-Cria um novo bot.
+#### PATCH /admin/withdrawals/:id
+Aprovar ou rejeitar saque
+
+**Body (Opção 1):**
+```json
+{
+  "status": "APPROVED"  // ou "REJECTED", "PAID", "PENDING"
+}
+```
+
+**Body (Opção 2):**
+```json
+{
+  "approved": true  // ou false
+}
+```
+
+#### GET /admin/config
+Obter configurações do sistema
+
+**Response:**
+```json
+{
+  "mensagem": "Configurações recuperadas com sucesso",
+  "dados": {
+    "salesFeePercent": 5.0
+  }
+}
+```
+
+#### PUT /admin/config
+Atualizar configurações
 
 **Body:**
 ```json
 {
-  "usuario_id": 1,
-  "nome": "Bot Vendas",
-  "token": "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11",
-  "descricao": "Bot para vendas automáticas"
+  "salesFeePercent": 7.5
 }
 ```
 
-**Resposta:**
+#### GET /admin/stats
+Obter estatísticas do sistema
+
+**Response:**
 ```json
 {
-  "mensagem": "Bot criado com sucesso",
-  "dados": { "id": 1, "nome": "Bot Vendas", "ativo": true, ... }
+  "mensagem": "Estatísticas recuperadas com sucesso",
+  "dados": {
+    "totalUsers": 100,
+    "totalBots": 50,
+    "totalBalance": 10000.00,
+    "pendingWithdrawals": {
+      "count": 5,
+      "totalAmount": 500.00
+    },
+    "transactions": {
+      "count": 200,
+      "totalAmount": 15000.00
+    }
+  }
 }
 ```
 
-#### `GET /bots/:id`
-Consulta um bot específico por ID.
-
-**Resposta:**
-```json
-{
-  "mensagem": "Bot encontrado",
-  "dados": { "id": 1, "nome": "Bot Vendas", ... }
-}
-```
-
-#### `PUT /bots/:id`
-Atualiza um bot existente.
-
-**Body:**
-```json
-{
-  "nome": "Bot Vendas Premium",
-  "descricao": "Bot atualizado",
-  "ativo": false
-}
-```
-
-**Resposta:**
-```json
-{
-  "mensagem": "Bot atualizado com sucesso",
-  "dados": { "id": 1, "nome": "Bot Vendas Premium", ... }
-}
-```
-
-#### `DELETE /bots/:id`
-Remove um bot.
-
-**Resposta:**
-```json
-{
-  "mensagem": "Bot removido com sucesso",
-  "dados": { "id": 1, "nome": "Bot Vendas" }
-}
-```
-
-## 🚢 Deploy no Render
-
-### 1. Criar novo Web Service no Render
-
-- Conecte seu repositório GitHub
-- Selecione o branch principal
-- Configure o diretório raiz como `backend-node`
-
-### 2. Configurar Build & Deploy
-
-- **Build Command:** `npm install`
-- **Start Command:** `npm start`
-
-### 3. Adicionar variáveis de ambiente
-
-No painel do Render, adicione:
-- `SUPABASE_URL`
-- `SUPABASE_KEY`
-
-### 4. Deploy
-
-O Render fará o deploy automaticamente. A aplicação estará disponível em:
-```
-https://seu-app.onrender.com
-```
-
-## 📝 Próximos Passos
-
-- [ ] Implementar autenticação JWT
-- [ ] Criar rotas de usuários
-- [ ] Integrar com Telegram Bot API
-- [ ] Adicionar middleware de validação
-- [ ] Implementar rate limiting
-- [ ] Adicionar testes automatizados
+---
 
 ## 🔒 Segurança
 
-- Nunca commite o arquivo `.env`
-- Use variáveis de ambiente para todas as credenciais
-- Mantenha as dependências atualizadas
-- Implemente rate limiting em produção
+### Middleware de Autenticação
+
+- **`authenticateToken`**: Valida JWT e extrai informações do usuário
+- **`requireAdmin`**: Verifica se usuário tem permissão de administrador
+
+### Proteções Implementadas
+
+- ✅ Usuário só acessa seus próprios dados
+- ✅ `usuario_id` extraído do token JWT (não do cliente)
+- ✅ Rotas admin protegidas com autorização
+- ✅ Token expirado retorna 403
+- ✅ Requisição sem token retorna 401
+- ✅ Senhas criptografadas com bcrypt
+
+---
+
+## 📦 Estrutura do Projeto
+
+```
+backend-node/
+├── controllers/
+│   ├── admin.controller.js
+│   ├── auth.controller.js
+│   ├── bots.controller.js
+│   ├── financeiro.controller.js
+│   └── usuarios.controller.js
+├── middleware/
+│   └── auth.middleware.js
+├── routes/
+│   ├── admin.routes.js
+│   ├── auth.routes.js
+│   ├── bots.routes.js
+│   ├── finance.routes.js
+│   └── usuarios.routes.js
+├── index.js
+├── package.json
+└── .env
+```
+
+---
+
+## 🐛 Tratamento de Erros
+
+Todas as respostas de erro seguem o formato:
+
+```json
+{
+  "mensagem": "Descrição do erro",
+  "erro": "Detalhes técnicos"
+}
+```
+
+### Códigos de Status HTTP
+
+- `200` - Sucesso
+- `201` - Criado com sucesso
+- `400` - Requisição inválida
+- `401` - Não autenticado
+- `403` - Não autorizado
+- `404` - Não encontrado
+- `409` - Conflito (ex: email já cadastrado)
+- `500` - Erro interno do servidor
+
+---
+
+## 🚀 Deploy
+
+### Render.com
+
+1. Conecte seu repositório GitHub
+2. Configure as variáveis de ambiente
+3. Deploy automático a cada push
+
+### Variáveis de Ambiente Necessárias
+
+```env
+SUPABASE_URL=https://seu-projeto.supabase.co
+SUPABASE_KEY=sua_chave_anon
+JWT_SECRET=chave_secreta_forte
+PORT=3000
+```
+
+---
+
+## 📝 Notas Importantes
+
+- Tokens JWT expiram em 7 dias
+- Senha mínima: 6 caracteres
+- Backend aceita campos em PT e EN para compatibilidade
+- Todos os endpoints retornam JSON
+- CORS habilitado para todos os origins
+
+---
+
+## 🤝 Contribuindo
+
+1. Fork o projeto
+2. Crie uma branch para sua feature
+3. Commit suas mudanças
+4. Push para a branch
+5. Abra um Pull Request
+
+---
 
 ## 📄 Licença
 
-MIT
+Este projeto é privado e proprietário.
+
+---
+
+## 🆘 Suporte
+
+Para suporte, entre em contato através do email: suporte@stratonbot.com

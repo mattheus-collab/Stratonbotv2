@@ -1,0 +1,41 @@
+{
+  "name": "stratonbot-backend",
+  "version": "1.0.0",
+  "description": "Backend for StratonBot",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node backend/src/index.ts",
+    "build": "tsc",
+    "start": "node dist/backend/src/index.js",
+    "seed": "ts-node backend/prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.10.2",
+    "axios": "^1.6.7",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "node-telegram-bot-api": "^0.65.1",
+    "pg": "^8.11.3",
+    "prisma": "^5.10.2",
+    "uuid": "^9.0.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^20.11.19",
+    "@types/node-telegram-bot-api": "^0.64.0",
+    "@types/uuid": "^9.0.8",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  cpf       String?
+  role      Role     @default(USER)
+  balance   Float    @default(0.0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bots               Bot[]
+  transactions       Transaction[]
+  withdrawalRequests WithdrawalRequest[]
+  pixKeys            PixKey[]
+}
+
+model Bot {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  apiKey    String?
+  config    Json?    @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+}
+
+model PixKey {
+  id        String   @id @default(uuid())
+  userId    String
+  keyType   String
+  keyValue  String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Transaction {
+  id         String            @id @default(uuid())
+  userId     String
+  botId      String?
+  amount     Float
+  fee        Float             @default(0.0)
+  netAmount  Float             @default(0.0)
+  type       TransactionType
+  status     TransactionStatus @default(PENDING)
+  externalId String? // Inter Transaction ID
+  createdAt  DateTime          @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  bot  Bot? @relation(fields: [botId], references: [id])
+}
+
+model WithdrawalRequest {
+  id              String           @id @default(uuid())
+  userId          String
+  amount          Float
+  status          WithdrawalStatus @default(PENDING)
+  pixKey          String
+  approvedBy      String?
+  rejectionReason String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model SystemConfig {
+  id              String @id @default("default")
+  salesFeePercent Float  @default(5.0)
+}
+
+model WebhookLog {
+  id        String   @id @default(uuid())
+  payload   Json
+  status    String
+  createdAt DateTime @default(now())
+}

@@ -190,7 +190,7 @@ const atualizarSaque = async (req, res) => {
             erro: error.message
         });
     }
-}; r
+};
 
 // Obter configurações do sistema (admin)
 const getConfig = async (req, res) => {

@@ -105,14 +105,11 @@ const BotForm: React.FC = () => {
             // In a real app, you would upload the photo to a storage service
             // For now, we'll use the preview as the welcomePhoto
             const payload = {
-                name: formData.name,
-                apiKey: formData.botToken,
-                config: {
-                    welcomePhoto: photoPreview || formData.welcomePhoto,
-                    status: formData.status,
-                    welcomeMessage: formData.welcomeMessage,
-                    products: products,
-                },
+                nome: formData.name,  // Backend espera 'nome'
+                token: formData.botToken,  // Backend espera 'token'
+                descricao: `Bot: ${formData.name}`,
+                // Nota: config não é suportado pelo backend atual
+                // Pode ser implementado futuramente
             };
 
             if (id) {

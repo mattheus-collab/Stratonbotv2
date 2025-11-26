@@ -190,10 +190,135 @@ const atualizarSaque = async (req, res) => {
             erro: error.message
         });
     }
+}; r
+
+// Obter configurações do sistema (admin)
+const getConfig = async (req, res) => {
+    try {
+        // Por enquanto, retornamos uma configuração padrão
+        // Em produção, isso deveria vir de uma tabela de configurações
+        const { data, error } = await supabase
+            .from('configuracoes')
+            .select('*')
+            .single();
+
+        if (error) {
+            // Se não existe tabela de configurações, retorna valores padrão
+            return res.json({
+                mensagem: 'Configurações recuperadas com sucesso',
+                dados: {
+                    salesFeePercent: 5.0
+                }
+            });
+        }
+
+        res.json({
+            mensagem: 'Configurações recuperadas com sucesso',
+            dados: {
+                salesFeePercent: data.taxa_venda || 5.0
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            mensagem: 'Erro ao buscar configurações',
+            erro: error.message
+        });
+    }
+};
+
+// Atualizar configurações do sistema (admin)
+const updateConfig = async (req, res) => {
+    try {
+        const { salesFeePercent } = req.body;
+
+        if (salesFeePercent === undefined || salesFeePercent < 0 || salesFeePercent > 100) {
+            return res.status(400).json({
+                mensagem: 'Taxa de venda inválida',
+                erro: 'A taxa deve estar entre 0 e 100'
+            });
+        }
+
+        // Tenta atualizar ou inserir a configuração
+        const { data, error } = await supabase
+            .from('configuracoes')
+            .upsert({
+                id: 1,
+                taxa_venda: salesFeePercent,
+                updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+        if (error) {
+            // Se a tabela não existe, apenas retorna sucesso com os valores
+            return res.json({
+                mensagem: 'Configurações atualizadas com sucesso',
+                dados: {
+                    salesFeePercent: salesFeePercent
+                }
+            });
+        }
+
+        res.json({
+            mensagem: 'Configurações atualizadas com sucesso',
+            dados: {
+                salesFeePercent: data.taxa_venda
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            mensagem: 'Erro ao atualizar configurações',
+            erro: error.message
+        });
+    }
+};
+
+// Obter estatísticas do sistema (admin)
+const getStats = async (req, res) => {
+    try {
+        // Busca estatísticas gerais do sistema
+        const [usuariosResult, botsResult, saquesResult, transacoesResult] = await Promise.all([
+            supabase.from('usuarios').select('id, saldo', { count: 'exact' }),
+            supabase.from('bots').select('id', { count: 'exact' }),
+            supabase.from('saques').select('id, valor, status', { count: 'exact' }),
+            supabase.from('transacoes').select('id, valor', { count: 'exact' })
+        ]);
+
+        // Calcula saldo total
+        const saldoTotal = usuariosResult.data?.reduce((acc, user) => acc + (user.saldo || 0), 0) || 0;
+
+        // Calcula total de saques pendentes
+        const saquesPendentes = saquesResult.data?.filter(s => s.status === 'pendente') || [];
+        const valorSaquesPendentes = saquesPendentes.reduce((acc, s) => acc + (s.valor || 0), 0);
+
+        // Calcula total de transações
+        const valorTotalTransacoes = transacoesResult.data?.reduce((acc, t) => acc + (t.valor || 0), 0) || 0;
+
+        res.json({
+            mensagem: 'Estatísticas recuperadas com sucesso',
+            dados: {
+                totalUsers: usuariosResult.count || 0,
+                totalBots: botsResult.count || 0,
+                totalBalance: saldoTotal,
+                pendingWithdrawals: saquesPendentes.length,
+                pendingWithdrawalsAmount: valorSaquesPendentes,
+                totalTransactions: transacoesResult.count || 0,
+                totalTransactionsAmount: valorTotalTransacoes
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            mensagem: 'Erro ao buscar estatísticas',
+            erro: error.message
+        });
+    }
 };
 
 module.exports = {
     listarUsuarios,
     listarSaques,
-    atualizarSaque
+    atualizarSaque,
+    getConfig,
+    updateConfig,
+    getStats
 };

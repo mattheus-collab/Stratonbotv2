@@ -3,19 +3,13 @@ const { supabase } = require('../index');
 // Listar todos os bots
 const listarBots = async (req, res) => {
     try {
-        const { usuario_id } = req.query;
+        const usuario_id = req.user.id; // Extrai do token autenticado
 
-        let query = supabase
+        const { data, error } = await supabase
             .from('bots')
             .select('*')
+            .eq('usuario_id', usuario_id)
             .order('created_at', { ascending: false });
-
-        // Filtrar por usuário se fornecido
-        if (usuario_id) {
-            query = query.eq('usuario_id', usuario_id);
-        }
-
-        const { data, error } = await query;
 
         if (error) throw error;
 
@@ -35,27 +29,18 @@ const listarBots = async (req, res) => {
 // Criar novo bot
 const criarBot = async (req, res) => {
     try {
-        const { usuario_id, nome, token, descricao } = req.body;
+        const { nome, name, token, descricao, description } = req.body;
+        const usuario_id = req.user.id; // Extrai do token autenticado
+
+        // Aceita tanto 'nome' quanto 'name', 'descricao' quanto 'description'
+        const nomeBot = nome || name;
+        const descricaoBot = descricao || description;
 
         // Validação básica
-        if (!usuario_id || !nome || !token) {
+        if (!nomeBot || !token) {
             return res.status(400).json({
                 mensagem: 'Campos obrigatórios não preenchidos',
-                erro: 'usuario_id, nome e token são obrigatórios'
-            });
-        }
-
-        // Verifica se o usuário existe
-        const { data: usuario, error: usuarioError } = await supabase
-            .from('usuarios')
-            .select('id')
-            .eq('id', usuario_id)
-            .single();
-
-        if (usuarioError || !usuario) {
-            return res.status(404).json({
-                mensagem: 'Usuário não encontrado',
-                erro: 'ID de usuário inválido'
+                erro: 'nome e token são obrigatórios'
             });
         }
 
@@ -78,9 +63,9 @@ const criarBot = async (req, res) => {
             .from('bots')
             .insert([{
                 usuario_id,
-                nome,
+                nome: nomeBot,
                 token,
-                descricao,
+                descricao: descricaoBot,
                 ativo: true
             }])
             .select()

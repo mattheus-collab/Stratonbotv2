@@ -9,13 +9,15 @@ const {
     listarTransacoes,
     consultarSaldoBalance
 } = require('../controllers/financeiro.controller');
+const { authenticateToken } = require('../middleware/auth.middleware');
 
 // Rotas compatíveis com /finance/* (frontend antigo)
-router.get('/balance', consultarSaldoBalance);
-router.get('/pix-keys', listarChavesPix);
-router.post('/pix-keys', cadastrarChavePix);
-router.get('/withdrawals', listarSaques);
-router.post('/withdrawals', solicitarSaque);
-router.get('/transactions', listarTransacoes);
+// Todas as rotas requerem autenticação
+router.get('/balance', authenticateToken, consultarSaldoBalance);
+router.get('/pix-keys', authenticateToken, listarChavesPix);
+router.post('/pix-keys', authenticateToken, cadastrarChavePix);
+router.get('/withdrawals', authenticateToken, listarSaques);
+router.post('/withdrawals', authenticateToken, solicitarSaque);
+router.get('/transactions', authenticateToken, listarTransacoes);
 
 module.exports = router;

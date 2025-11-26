@@ -76,10 +76,13 @@ const login = async (req, res) => {
 // Registro de novo usuário
 const register = async (req, res) => {
     try {
-        const { nome, email, password } = req.body;
+        const { nome, name, email, password, cpf } = req.body;
+
+        // Aceita tanto 'nome' quanto 'name' para compatibilidade com frontend
+        const nomeUsuario = nome || name;
 
         // Validação básica
-        if (!nome || !email || !password) {
+        if (!nomeUsuario || !email || !password) {
             return res.status(400).json({
                 mensagem: 'Todos os campos são obrigatórios',
                 erro: 'Nome, email e senha devem ser preenchidos'
@@ -115,9 +118,10 @@ const register = async (req, res) => {
         const { data: novoUsuario, error } = await supabase
             .from('usuarios')
             .insert([{
-                nome,
+                nome: nomeUsuario,
                 email,
                 senha: senhaHash,
+                cpf: cpf || null,
                 saldo: 0,
                 role: 'usuario'
             }])

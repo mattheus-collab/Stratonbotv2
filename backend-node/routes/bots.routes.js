@@ -7,20 +7,22 @@ const {
     atualizarBot,
     removerBot
 } = require('../controllers/bots.controller');
+const { authenticateToken } = require('../middleware/auth.middleware');
 
-// GET /bots - Listar todos os bots (com filtro opcional por usuario_id)
-router.get('/', listarBots);
+// Todas as rotas de bots requerem autenticação
+// GET /bots - Listar todos os bots do usuário autenticado
+router.get('/', authenticateToken, listarBots);
 
 // POST /bots - Criar novo bot
-router.post('/', criarBot);
+router.post('/', authenticateToken, criarBot);
 
 // GET /bots/:id - Consultar bot por ID
-router.get('/:id', consultarBot);
+router.get('/:id', authenticateToken, consultarBot);
 
 // PUT /bots/:id - Atualizar bot
-router.put('/:id', atualizarBot);
+router.put('/:id', authenticateToken, atualizarBot);
 
 // DELETE /bots/:id - Remover bot
-router.delete('/:id', removerBot);
+router.delete('/:id', authenticateToken, removerBot);
 
 module.exports = router;

@@ -3,31 +3,22 @@ const { supabase } = require('../index');
 // Cadastrar chave PIX
 const cadastrarChavePix = async (req, res) => {
     try {
-        const { usuario_id, chave_pix, tipo_chave } = req.body;
+        const { chave_pix, tipo_chave, keyType, keyValue } = req.body;
+        const usuario_id = req.user.id; // Extrai do token autenticado
+
+        // Aceita tanto formato PT (chave_pix, tipo_chave) quanto EN (keyType, keyValue)
+        const chavePix = chave_pix || keyValue;
+        const tipoChave = tipo_chave || keyType;
 
         // Validação básica
-        if (!usuario_id || !chave_pix || !tipo_chave) {
+        if (!chavePix || !tipoChave) {
             return res.status(400).json({
                 mensagem: 'Campos obrigatórios não preenchidos',
-                erro: 'usuario_id, chave_pix e tipo_chave são obrigatórios'
+                erro: 'chave_pix e tipo_chave são obrigatórios'
             });
         }
 
-        // Verifica se o usuário existe
-        const { data: usuario, error: usuarioError } = await supabase
-            .from('usuarios')
-            .select('id')
-            .eq('id', usuario_id)
-            .single();
-
-        if (usuarioError || !usuario) {
-            return res.status(404).json({
-                mensagem: 'Usuário não encontrado',
-                erro: 'ID de usuário inválido'
-            });
-        }
-
-        // Verifica se já existe uma chave PIX para este usuário
+        // Verifica se já existe uma chave PIX aprovada para este usuário
         const { data: pixExistente } = await supabase
             .from('chaves_pix')
             .select('id')
@@ -47,8 +38,8 @@ const cadastrarChavePix = async (req, res) => {
             .from('chaves_pix')
             .insert([{
                 usuario_id,
-                chave_pix,
-                tipo_chave,
+                chave_pix: chavePix,
+                tipo_chave: tipoChave,
                 status: 'pendente'
             }])
             .select()
@@ -58,7 +49,12 @@ const cadastrarChavePix = async (req, res) => {
 
         res.status(201).json({
             mensagem: 'Chave PIX cadastrada com sucesso',
-            dados: data
+            dados: {
+                id: data.id,
+                keyType: data.tipo_chave,
+                keyValue: data.chave_pix,
+                status: data.status
+            }
         });
     } catch (error) {
         res.status(500).json({
@@ -109,17 +105,21 @@ const consultarSaldo = async (req, res) => {
 // Solicitar saque
 const solicitarSaque = async (req, res) => {
     try {
-        const { usuario_id, valor } = req.body;
+        const { valor, amount } = req.body;
+        const usuario_id = req.user.id; // Extrai do token autenticado
+
+        // Aceita tanto 'valor' quanto 'amount'
+        const valorSaque = valor || amount;
 
         // Validação básica
-        if (!usuario_id || !valor) {
+        if (!valorSaque) {
             return res.status(400).json({
                 mensagem: 'Campos obrigatórios não preenchidos',
-                erro: 'usuario_id e valor são obrigatórios'
+                erro: 'valor é obrigatório'
             });
         }
 
-        if (valor <= 0) {
+        if (valorSaque <= 0) {
             return res.status(400).json({
                 mensagem: 'Valor inválido',
                 erro: 'O valor do saque deve ser maior que zero'
@@ -140,7 +140,7 @@ const solicitarSaque = async (req, res) => {
             });
         }
 
-        if (usuario.saldo < valor) {
+        if (usuario.saldo < valorSaque) {
             return res.status(400).json({
                 mensagem: 'Saldo insuficiente',
                 erro: `Saldo disponível: R$ ${usuario.saldo.toFixed(2)}`
@@ -167,7 +167,7 @@ const solicitarSaque = async (req, res) => {
             .from('saques')
             .insert([{
                 usuario_id,
-                valor,
+                valor: valorSaque,
                 status: 'pendente',
                 chave_pix_id: chavePix.id
             }])
@@ -178,7 +178,12 @@ const solicitarSaque = async (req, res) => {
 
         res.status(201).json({
             mensagem: 'Solicitação de saque criada com sucesso',
-            dados: data
+            dados: {
+                id: data.id,
+                amount: data.valor,
+                status: data.status.toUpperCase(),
+                createdAt: data.created_at
+            }
         });
     } catch (error) {
         res.status(500).json({
@@ -191,14 +196,7 @@ const solicitarSaque = async (req, res) => {
 // Listar chaves PIX do usuário
 const listarChavesPix = async (req, res) => {
     try {
-        const { usuario_id } = req.query;
-
-        if (!usuario_id) {
-            return res.status(400).json({
-                mensagem: 'ID do usuário é obrigatório',
-                erro: 'Forneça o usuario_id como query parameter'
-            });
-        }
+        const usuario_id = req.user.id; // Extrai do token autenticado
 
         const { data, error } = await supabase
             .from('chaves_pix')
@@ -231,14 +229,7 @@ const listarChavesPix = async (req, res) => {
 // Listar saques do usuário
 const listarSaques = async (req, res) => {
     try {
-        const { usuario_id } = req.query;
-
-        if (!usuario_id) {
-            return res.status(400).json({
-                mensagem: 'ID do usuário é obrigatório',
-                erro: 'Forneça o usuario_id como query parameter'
-            });
-        }
+        const usuario_id = req.user.id; // Extrai do token autenticado
 
         const { data, error } = await supabase
             .from('saques')
@@ -271,14 +262,7 @@ const listarSaques = async (req, res) => {
 // Listar transações do usuário (mock - pode ser implementado com tabela de transações)
 const listarTransacoes = async (req, res) => {
     try {
-        const { usuario_id } = req.query;
-
-        if (!usuario_id) {
-            return res.status(400).json({
-                mensagem: 'ID do usuário é obrigatório',
-                erro: 'Forneça o usuario_id como query parameter'
-            });
-        }
+        const usuario_id = req.user.id; // Extrai do token autenticado
 
         // Por enquanto retorna array vazio - pode ser implementado com tabela de transações
         res.json({
@@ -296,14 +280,7 @@ const listarTransacoes = async (req, res) => {
 // Consultar saldo (versão compatível com /finance/balance)
 const consultarSaldoBalance = async (req, res) => {
     try {
-        const { usuario_id } = req.query;
-
-        if (!usuario_id) {
-            return res.status(400).json({
-                mensagem: 'ID do usuário é obrigatório',
-                erro: 'Forneça o usuario_id como query parameter'
-            });
-        }
+        const usuario_id = req.user.id; // Extrai do token autenticado
 
         const { data, error } = await supabase
             .from('usuarios')

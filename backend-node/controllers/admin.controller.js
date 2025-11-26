@@ -111,13 +111,22 @@ const listarSaques = async (req, res) => {
 const atualizarSaque = async (req, res) => {
     try {
         const { id } = req.params;
-        const { status } = req.body;
+        const { status, approved } = req.body;
+
+        // Aceita tanto 'status' quanto 'approved' (boolean) para compatibilidade
+        let statusSaque;
+        if (status) {
+            statusSaque = status.toUpperCase();
+        } else if (approved !== undefined) {
+            statusSaque = approved ? 'APPROVED' : 'REJECTED';
+        }
 
         // Validação
-        if (!status || !['APPROVED', 'REJECTED', 'PAID'].includes(status)) {
+        const validStatuses = ['APPROVED', 'REJECTED', 'PAID', 'PENDING'];
+        if (!statusSaque || !validStatuses.includes(statusSaque)) {
             return res.status(400).json({
                 mensagem: 'Status inválido',
-                erro: 'Status deve ser APPROVED, REJECTED ou PAID'
+                erro: `Status deve ser um de: ${validStatuses.join(', ')}`
             });
         }
 
@@ -136,7 +145,7 @@ const atualizarSaque = async (req, res) => {
         }
 
         // Se está rejeitando, devolve o saldo ao usuário
-        if (status === 'REJECTED' && saqueExistente.status === 'pendente') {
+        if (statusSaque === 'REJECTED' && saqueExistente.status === 'pendente') {
             const { error: updateSaldoError } = await supabase
                 .from('usuarios')
                 .update({
@@ -148,7 +157,7 @@ const atualizarSaque = async (req, res) => {
         }
 
         // Se está aprovando, deduz o saldo (se ainda não foi deduzido)
-        if (status === 'APPROVED' && saqueExistente.status === 'pendente') {
+        if (statusSaque === 'APPROVED' && saqueExistente.status === 'pendente') {
             const novoSaldo = saqueExistente.usuarios.saldo - saqueExistente.valor;
 
             if (novoSaldo < 0) {
@@ -169,7 +178,7 @@ const atualizarSaque = async (req, res) => {
         // Atualiza o status do saque
         const { data, error } = await supabase
             .from('saques')
-            .update({ status: status.toLowerCase() })
+            .update({ status: statusSaque.toLowerCase() })
             .eq('id', id)
             .select()
             .single();

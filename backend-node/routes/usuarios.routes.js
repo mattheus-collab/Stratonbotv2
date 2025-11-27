@@ -5,14 +5,15 @@ const {
     cadastrarUsuario,
     consultarUsuario
 } = require('../controllers/usuarios.controller');
+const { authenticateToken } = require('../middleware/auth.middleware');
 
-// GET /usuarios - Listar todos os usuários
-router.get('/', listarUsuarios);
+// GET /usuarios - Listar todos os usuários (requer autenticação)
+router.get('/', authenticateToken, listarUsuarios);
 
-// POST /usuarios - Cadastrar novo usuário
+// POST /usuarios - Cadastrar novo usuário (público para registro)
 router.post('/', cadastrarUsuario);
 
-// GET /usuarios/:id - Consultar usuário por ID
-router.get('/:id', consultarUsuario);
+// GET /usuarios/:id - Consultar usuário por ID (requer autenticação)
+router.get('/:id', authenticateToken, consultarUsuario);
 
 module.exports = router;
